@@ -21,7 +21,7 @@
 # 7.	If unambiguous fuzzy match, reatin read (try fuzzy match for 1 - max mismatches, substitutions only) and map to id
 # 8.	END
 
-
+# mod for paired end in progress...
 
 
 use strict;
