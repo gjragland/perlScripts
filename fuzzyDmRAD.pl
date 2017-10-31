@@ -1,5 +1,7 @@
 #!usr/bin/perl -w
 #GJR 3/20/2017
+#Modified 10/31/2017, added support for gzipped files
+
 # Demultiplex RADseq data with in-line barcodes
 # Neither Lauren's 'trimmer.py' nor the stacks demultiplexer appear to check whether allowing barcode mismathches produce ambiguous mappings
 # Here, we use fuzzy matching, tossing any putative barcodes in the sequence that fuzzy match to more than one of the user-supplied list of actual barcodes
@@ -51,9 +53,7 @@ GetOptions ('fastq=s' => \$infile,
 if ($help) {
   print "USAGE: perl fuzzyDmRAD.pl --fastq='yourFastqFile' --bcodefile='yourBcodeFile'
      --logfile='yourLogFile' --outfq='yourOutputFqFile'
-
 --logfile and --outfq are optional, defaults = 'fuzzyDmRAD.log' and 'fuzzyDmRAD.out.fq'
-
 --help: print usage info
 ";
 exit;    
@@ -94,7 +94,14 @@ my $nPerfectMatchNoCutSite=0;
 my $nFuzzyMatchCutsite=0;
 my $nFuzzyMatchNoCutsite=0;
 
-open IN, "<$infile";
+#added support for zipped files, Halloween, 2017
+if ($infile =~ /.gz$/) {
+  open(IN, "gunzip -c $infile |") || die "can’t open pipe to $infile\n";
+} else {
+  open(IN, "<$infile") || die "can’t open $infile";
+}
+
+
 while (<IN>) {
   #read 4 lines at a time into array
   my @lines = ($_,'','','');
@@ -160,17 +167,14 @@ close $outfileHandle;
 my $retained = $nPerfectMatchCutSite + $nPerfectMatchNoCutSite + $nFuzzyMatchCutsite + $nFuzzyMatchNoCutsite;
 my $perRetained = $retained/$nReads;
 print "
-
 Total reads: $nReads
 Retained reads: $retained
 Percent reads retained: $perRetained
-
 Retained read categories ...
 Perfect match with cutsite: $nPerfectMatchCutSite
 Perfect match without cutsite: $nPerfectMatchNoCutSite
 Fuzzy match with cutsite: $nFuzzyMatchCutsite
 Fuzzy match without cutsite: $nFuzzyMatchNoCutsite
-
 ";
 
 open OUT, ">$logfile";
@@ -227,3 +231,4 @@ sub fuzzy {
   }
   return($matchedBcode);
 }
+
